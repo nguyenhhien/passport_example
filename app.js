@@ -6,16 +6,24 @@ var FacebookStrategy = require('passport-facebook').Strategy;
 
 var app = express();
 
-var FACEBOOK_APP_ID = "305117229820764";
-var FACEBOOK_APP_SECRET = "54ba3a50826c9e55b59c9d30ce1a983f";
+const MONGO = {
+    URL: 'mongodb://localhost/testdb'
+}
+
+const FACEBOOK = {
+    APP_ID: "305117229820764",
+    APP_SECRET: "54ba3a50826c9e55b59c9d30ce1a983f",
+
+    OUT_URL: '/auth/facebook',
+    BACK_URL: '/auth/facebook/callback'
+}
 
 app.configure(function() {
 
     /**
      * Setup Mongo DB
      */
-    mongoose.connect('mongodb://localhost/testdb');
-
+    mongoose.connect(MONGO.URL);
     var UserSchema = new mongoose.Schema({
         facebookId: {
             type: String
@@ -24,7 +32,6 @@ app.configure(function() {
             type: String
         },
     });
-
     UserSchema.statics.findOrCreate = function(filters, cb) {
         User = this;
         this.find(filters, function(err, results) {
@@ -39,7 +46,6 @@ app.configure(function() {
             }
         });
     };
-
     var User = mongoose.model('User', UserSchema);
 
     /**
@@ -47,9 +53,9 @@ app.configure(function() {
      * Authenticated by Facebook initially
      */
     options = {
-        clientID: FACEBOOK_APP_ID,
-        clientSecret: FACEBOOK_APP_SECRET,
-        callbackURL: 'http://localhost:3000/auth/facebook/callback'
+        clientID: FACEBOOK.APP_ID,
+        clientSecret: FACEBOOK.APP_SECRET,
+        callbackURL: FACEBOOK.BACK_URL
     };
 
     passport.use(
@@ -85,7 +91,7 @@ app.configure(function() {
     );
 
     app.get(
-        '/auth/facebook',
+        FACEBOOK.OUT_URL,
         passport.authenticate('facebook',
             {
                 session: false,
@@ -94,7 +100,7 @@ app.configure(function() {
         )
     );
 
-    app.get('/auth/facebook/callback',
+    app.get(FACEBOOK.BACK_URL,
         passport.authenticate('facebook',
             {
                 session: false,
@@ -140,18 +146,26 @@ app.configure(function() {
 /**
  * HTML routing setup
  */
-app.get(
-    '/',
+app.get('/',
     function(req, res) {
-        res.send('<a href="/auth/facebook">Log in</a>');
+        res.send(`<a href="${FACEBOOK.BACK_URL}">Log in</a>`);
     }
 );
 
-app.get(
-    '/profile',
+app.get('/logout',
+        function(req, res){
+
+        req.logout();
+        res.redirect('/');
+    }
+);
+
+app.get('/profile',
     passport.authenticate('bearer', { session: false }),
     function(req, res) {
-        res.send("LOGGED IN as " + req.user.facebookId + " - <a href=\"/logout\">Log out</a>");
+        res.send("LOGGED IN as " + req.user.facebookId +
+            " - <a href=\"/logout\">Log out</a>"
+        );
     }
 );
 
