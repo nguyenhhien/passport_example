@@ -31,6 +31,7 @@ var UserSchema = new mongoose.Schema({
         type: String
     },
 });
+
 UserSchema.statics.findOrCreate = function(filters, cb) {
     User = this;
     this.find(filters, function(err, results) {
@@ -45,6 +46,30 @@ UserSchema.statics.findOrCreate = function(filters, cb) {
         }
     });
 };
+
+UserSchema.statics.findAndRemove = function(filters, cb) {
+    User = this;
+    this.find(filters, function(err, results) {
+        if(err){
+            console.log("Failed to retrieve user. Error: ", err);
+            cb(err);
+        } else {
+            for(var i=0; i<results.length; i++){
+
+                console.log("Removing user: ", results[i]);
+                results[i].remove(function(err){
+                    if(err){
+                        console.log("Failed to remove user. Error: ", err);
+                    } else {
+                        console.log("Removed user.");
+                    }
+                    cb(err);
+                });
+            }
+        }
+    });
+};
+
 var User = mongoose.model('User', UserSchema);
 
 /**
@@ -134,6 +159,20 @@ app.get('/logout',
 
         var access_token = req.query.access_token;
         console.log("Log out acess token: ", access_token);
+
+        User.findAndRemove(
+            {
+                access_token: access_token
+            },
+            function (err) {
+
+                if(!err) {
+                    console.log("Logged out user with token: ", access_token);
+                } else {
+                    console.log("Failed to logged out user. Error: ", err);
+                }
+            }
+        );
 
         res.redirect('/');
     }
