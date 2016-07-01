@@ -136,7 +136,12 @@ passport.use(
                     }
 
                     console.log("Retrieved user: ", user , " from token: ", token);
-                    return done(null, user, { scope: 'all' })
+                    return done(null, user,
+                        {
+                            //set by Passport at req.authInfo to be used by later middleware for authorization and access control.
+                            scope: 'all'
+                        }
+                    );
                 }
             );
         }
@@ -179,10 +184,19 @@ app.get('/logout',
 );
 
 app.get('/profile',
-    passport.authenticate('bearer', { session: false }),
+    passport.authenticate('bearer',
+        {
+            // Requests containing bearer tokens do not require session support,
+            // so the session option can be set to false
+            session: false
+        }
+    ),
     function(req, res) {
         res.send(
-            `LOGGED IN as ${req.user.facebookId} - <a href="/logout?access_token=${req.user.access_token}">Log out</a>`
+            `LOGGED IN as ${req.user.facebookId} - \
+            <a href="/logout?access_token=${req.user.access_token}">\
+                Log out\
+            </a>`
         );
     }
 );
@@ -192,6 +206,7 @@ app.get(
     passport.authenticate(FACEBOOK.NAME,
         {
             session: false,
+            //Specify what to take from FB
             scope: []
         }
     )
@@ -205,6 +220,11 @@ app.get(FACEBOOK.BACK_URL,
         }
     ),
     function(req, res) {
+
+        //The HTTP Bearer authentication strategy authenticates requests based on a bearer token contained in the:
+        // 1. authorization header field where the value is in the format {scheme} {token} and scheme is "Bearer" in this case.
+        // 2. access_token body parameter
+        // 3. access_token query parameter
         res.redirect(`/profile?access_token=${req.user.access_token}`);
     }
 );
