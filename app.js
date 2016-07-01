@@ -11,6 +11,7 @@ const MONGO = {
 }
 
 const FACEBOOK = {
+    NAME: 'facebook',
     APP_ID: "305117229820764",
     APP_SECRET: "54ba3a50826c9e55b59c9d30ce1a983f",
 
@@ -92,7 +93,7 @@ app.configure(function() {
 
     app.get(
         FACEBOOK.OUT_URL,
-        passport.authenticate('facebook',
+        passport.authenticate(FACEBOOK.NAME,
             {
                 session: false,
                 scope: []
@@ -101,14 +102,14 @@ app.configure(function() {
     );
 
     app.get(FACEBOOK.BACK_URL,
-        passport.authenticate('facebook',
+        passport.authenticate(FACEBOOK.NAME,
             {
                 session: false,
                 failureRedirect: "/"
             }
         ),
         function(req, res) {
-            res.redirect("/profile?access_token=" + req.user.access_token);
+            res.redirect(`/profile?access_token=${req.user.access_token}`);
         }
     );
 
@@ -163,8 +164,8 @@ app.get('/logout',
 app.get('/profile',
     passport.authenticate('bearer', { session: false }),
     function(req, res) {
-        res.send("LOGGED IN as " + req.user.facebookId +
-            " - <a href=\"/logout\">Log out</a>"
+        res.send(
+            `LOGGED IN as ${req.user.facebookId} - <a href="/logout">Log out</a>`
         );
     }
 );
