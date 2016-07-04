@@ -76,15 +76,13 @@ var User = mongoose.model('User', UserSchema);
  *
  * Authenticated by Facebook initially
  */
-options = {
-    clientID: FACEBOOK.APP_ID,
-    clientSecret: FACEBOOK.APP_SECRET,
-    callbackURL: FACEBOOK.BACK_URL
-};
-
 passport.use(
     new FacebookStrategy(
-        options,
+        {
+            clientID: FACEBOOK.APP_ID,
+            clientSecret: FACEBOOK.APP_SECRET,
+            callbackURL: FACEBOOK.BACK_URL
+        },
         function(accessToken, refreshToken, profile, done) {
             User.findOrCreate(
                 {
