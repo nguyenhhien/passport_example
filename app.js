@@ -1,6 +1,8 @@
 var express = require('express');
-var passport = require('passport');
+
 var mongoose = require('mongoose');
+
+var passport = require('passport');
 var BearerStrategy = require('passport-http-bearer').Strategy;
 var FacebookStrategy = require('passport-facebook').Strategy;
 
@@ -75,15 +77,23 @@ var User = mongoose.model('User', UserSchema);
 /**
  *
  * Authenticated by Facebook initially
+ * photos: [
+ *      {
+ *          value: url
+ *      }
+*  ],
+ provider: 'facebook',
  */
 passport.use(
     new FacebookStrategy(
         {
             clientID: FACEBOOK.APP_ID,
             clientSecret: FACEBOOK.APP_SECRET,
-            callbackURL: FACEBOOK.BACK_URL
+            callbackURL: FACEBOOK.BACK_URL,
+            profileFields: ['id', 'displayName', 'link', 'about', 'photos', 'emails']
         },
         function(accessToken, refreshToken, profile, done) {
+            console.log("Facebook profile: ", profile);
             User.findOrCreate(
                 {
                     facebookId: profile.id
@@ -190,6 +200,7 @@ app.get('/profile',
         }
     ),
     function(req, res) {
+        console.log("===After login by FB, req.user: ", JSON.stringify(req.user));
         res.send(
             `LOGGED IN as ${req.user.facebookId} - \
             <a href="/logout?access_token=${req.user.access_token}">\
@@ -204,8 +215,9 @@ app.get(
     passport.authenticate(FACEBOOK.NAME,
         {
             session: false,
+            authType: 'rerequest',
             //Specify what to take from FB
-            scope: []
+            scope: 'email'
         }
     )
 );
